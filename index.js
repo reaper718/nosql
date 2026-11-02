@@ -6,9 +6,11 @@ app.use(express.json());
 
 const productRouter = require('./routers/productRouter');
 const userRouter = require('./routers/userRouter');
+const cartRouter = require('./routers/cartRouter');
 
 app.use('/product', productRouter);
 app.use('/user', userRouter);
+app.use('/cart', cartRouter);   
 
 mongoConnect(() => {
     app.listen(3000, () => {
