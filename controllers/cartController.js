@@ -107,8 +107,39 @@ const postDeleteCartProduct = (req,res) => {
         })
 }
 
+const postOrder = (req,res) => {
+    req.user
+        .addOrder()
+        .then(result => {
+            res.status(200).json({
+                success: true,
+                message: "Order placed successfully"
+            });
+
+            res.redireec('/orders');
+        })
+        .catch(err => {
+            console.log(err);
+        })
+}
+
+const getOrders = (req,res) => {
+    req.user
+        .getOrder()
+        .then(orders => {
+            res.render('/orders', {
+                path: "/orders",
+                pageTitle: 'Your Orders',
+                orders: orders
+            })
+        })
+        .catch(err => console.log(err));
+}
+
 module.exports = {
     addProductToCart,
     getCart,
-    postDeleteCartProduct
+    postDeleteCartProduct,
+    postOrder,
+    getOrders
 }
