@@ -9,9 +9,9 @@ const adminRouter = require('./routers/adminRouter');
 const userRouter = require('./routers/userRouter');
 const cartRouter = require('./routers/cartRouter');
 
-app.use('/', (req,res) => {
-    res.status(200).sendFile(path.join(__dirname, "public", "index.html"));
-})
+// app.use('/', (req,res) => {
+//     res.status(200).sendFile(path.join(__dirname, "public", "index.html"));
+// })
 
 app.use('/product', adminRouter);
 app.use('/user', userRouter);

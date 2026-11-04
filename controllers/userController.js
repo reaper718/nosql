@@ -36,13 +36,10 @@ const getUser = async (req, res) => {
       email: email,
     });
 
-    const token = jwt.sign({id: user._id}, 'secretKey');
-
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User does not exist",
-        token: token
+        message: "User does not exist"
       });
     }
 
@@ -55,9 +52,12 @@ const getUser = async (req, res) => {
       });
     }
 
+    const token = jwt.sign({id: user._id}, 'secretKey');
+
     return res.status(200).json({
       success: true,
       message: "User logged in successfully!!!",
+      token: token
     });
   } catch (error) {
     console.log(error);
