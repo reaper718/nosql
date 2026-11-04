@@ -84,7 +84,10 @@ const postOrder = (req,res) => {
         })
         .then(result => {
             console.log(result);
-            res.status(200).json({
+            req.user.clearCart();
+        })
+        .then(() => {
+                res.status(200).json({
                 success: true,
                 message: "order placed successfully"
             })
@@ -92,17 +95,21 @@ const postOrder = (req,res) => {
         .catch(err => console.log(err));
 }
 
-const getOrders = (req,res) => {
-    req.user
-        .getOrder()
-        .then(orders => {
-            res.render('/orders', {
-                path: "/orders",
-                pageTitle: 'Your Orders',
-                orders: orders
-            })
+const getOrders = async (req,res) => {
+    try {
+        const orders = Order.find({ 'user.userId': req.user.id });
+
+        res.status(200).json({
+            success: true,
+            orders: orders
         })
-        .catch(err => console.log(err));
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: error
+        })
+    }
 }
 
 module.exports = {
