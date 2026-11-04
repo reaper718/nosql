@@ -1,5 +1,5 @@
-const Users = require('../models/users');
 const Product = require('../models/product');
+const Order = require('../models/order');
 
 const addProductToCart = (req, res) => {
     const { prodId }  = req.params;
@@ -66,18 +66,30 @@ const postDeleteCartProduct = (req,res) => {
 
 const postOrder = (req,res) => {
     req.user
-        .addOrder()
-        .then(result => {
-            res.status(200).json({
-                success: true,
-                message: "Order placed successfully"
+        .populate('cart.items.prodcuId')
+        .execPopulate()
+        .then(user => {
+            const products = user.cart.items.map(i => {
+                return {quantity: i.quantity, product: {...i.productId_doc}};
             });
 
-            res.redireec('/orders');
+            const order = new Order({
+                user: {
+                    name: req.user.name,
+                    userId: req.user.id
+                },
+                products: products
+            });
+            return order.save();
         })
-        .catch(err => {
-            console.log(err);
+        .then(result => {
+            console.log(result);
+            res.status(200).json({
+                success: true,
+                message: "order placed successfully"
+            })
         })
+        .catch(err => console.log(err));
 }
 
 const getOrders = (req,res) => {
