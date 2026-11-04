@@ -1,40 +1,74 @@
-const Users = require('../models/users');
+const Users = require("../models/users");
+const jwt = require('jsonwebtoken');
 
-const addUser = (req,res) => {
+const addUser = async (req, res) => {
+  try {
     const { name, email, password } = req.body;
 
-    const user = new Users(name, email, password);
+    const newUser = new Users({
+      name: name,
+      email: email,
+      password: password,
+      cart: [],
+    });
 
-    user.save()
-        .then(user => {
-            console.log("user created");
-            return res.status(201).json({
-                success: true,
-                message: "user created !!!"
-            })
-        })
-        .catch(err => {
-            console.log(err);
-        })
-}
+    await newUser.save();
 
-const getUser = (req,res) => {
-    const {id} = req.params;
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully!!!",
+      user: newUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: error,
+    });
+  }
+};
 
-    Users.findById(id)
-        .then(user => {
-            console.log(user);
-            return res.status(200).json({
-                success: true,
-                user: user
-            })
-        })
-        .catch(err => {
-            console.log(err);
-        })
-}
+const getUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await Users.findOne({
+      email: email,
+    });
+
+    const token = jwt.sign({id: user._id}, 'secretKey');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User does not exist",
+        token: token
+      });
+    }
+
+    const isValidPassword = user.password === password;
+
+    if (!isValidPassword) {
+      return res.status(403).json({
+        success: false,
+        message: "Incorrect password",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully!!!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: error,
+    });
+  }
+};
 
 module.exports = {
-    addUser,
-    getUser
-}
+  addUser,
+  getUser,
+};

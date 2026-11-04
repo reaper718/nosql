@@ -1,0 +1,172 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>MiniShop</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="#">MiniShop</a>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <!-- <span id="activeUser" class="text-light small">No user selected</span> -->
+                    <button class="btn btn-outline-light btn-sm" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#userModal">
+                        Register
+                    </button>
+                      <button class="btn btn-outline-info btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#loginModal">
+                          Login
+                      </button>
+                        <button class="btn btn-warning btn-sm" id="showCartBtn">
+                        Cart <span id="cartCount" class="badge text-bg-dark">0</span></button>
+                    <button class="btn btn-outline-light btn-sm" id="showOrdersBtn">Orders</button>
+                </div>
+            </div>
+        </nav>
+        <main class="container py-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h3 mb-1">Products</h1>
+                    <p class="text-secondary mb-0">A simple store demo</p>
+                </div>
+                <button class="btn btn-primary" id="newProductBtn">Add product</button>
+            </div>
+            <div id="notice" class="alert d-none" role="alert"></div>
+            <div id="products" class="row g-3">
+                <div class="col-12 text-secondary">Loading products…</div>
+            </div>
+            <section id="cartSection" class="mt-5 d-none">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="h4">Your cart</h2>
+                    <button class="btn btn-sm btn-outline-secondary" id="continueShopping">Continue shopping</button>
+                </div>
+                <div id="cartItems" class="mt-3"></div>
+                <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
+                    <strong id="cartTotal">Total: ₹0.00</strong
+                    ><button class="btn btn-success" id="checkoutBtn">Place order</button>
+                </div>
+            </section>
+            <section id="ordersSection" class="mt-5 d-none">
+                <h2 class="h4">Your orders</h2>
+                <div id="ordersList" class="mt-3"></div>
+            </section>
+        </main>
+
+        <div class="modal fade" id="userModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="userForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Register a user</h5>
+                            <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label class="form-label">Name</label>
+                            <input class="form-control mb-2" name="name" id="name" required /><label class="form-label">
+                                Email</label>
+                            <input class="form-control mb-2" type="email" name="email" id="email" required /><label
+                                class="form-label">
+                                Password</label>
+                            <input class="form-control" type="password" name="password" id="password" required minlength="6" />
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" type="submit">Register</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div class="modal fade" id="loginModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <form id="loginForm">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Login to MiniShop</h5>
+                            <button class="btn-close" data-bs-dismiss="modal"
+                                type="button"></button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <label class="form-label">Email</label>
+                            <input class="form-control mb-3"
+                                type="email" name="email" id="email" required>
+
+                            <label class="form-label">Password</label>
+                            <input class="form-control"
+                                type="password" name="password" id="password" required>
+
+                            <div class="mt-3 text-center">
+                                Don't have an account?
+
+                                <a href="#" data-bs-dismiss="modal"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#userModal">
+                                    Register
+                                </a>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" type="submit">
+                                Login
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="productModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="productForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="productModalTitle">Add product</h5>
+                            <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="prodId" /><label class="form-label">Title</label>
+                            <input class="form-control mb-2" name="title" required />
+                            <label class="form-label">Price</label>
+                            <input
+                                class="form-control mb-2"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                name="price"
+                                required
+                            /><label class="form-label">Image URL</label
+                            ><input
+                                class="form-control mb-2"
+                                type="url"
+                                name="imageURL"
+                                placeholder="https://..."
+                            /><label class="form-label">Description</label
+                            ><textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" type="submit">Save product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.1/axios.min.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>

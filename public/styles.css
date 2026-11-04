@@ -1,0 +1,31 @@
+body {
+    background: #f7f8fa;
+}
+
+.product-card {
+    height: 100%;
+}
+
+.product-image {
+    height: 190px;
+    object-fit: contain;
+    background: #fff;
+    padding: 12px;
+}
+
+.product-placeholder {
+    height: 190px;
+    display: grid;
+    place-items: center;
+    background: #eef1f5;
+    color: #7b8490;
+}
+
+.cart-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
