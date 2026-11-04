@@ -47,7 +47,7 @@ const postDeleteCartProduct = (req,res) => {
     const {prodId} = req.body;
 
     req.user
-        .deleteItemFromCart()
+        .removeFromCart(prodId)
         .then(result => {
             console.log(result);
             res.status(200).json({
