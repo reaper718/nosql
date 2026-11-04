@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -19,7 +20,7 @@ app.use('/product', adminRouter);
 app.use('/user', userRouter);
 app.use('/cart', cartRouter);   
 
-mongoose.connect('mongodb+srv://rudra:gPRJItKbI1MsM12i@cluster0.vxqdpak.mongodb.net/shop')
+mongoose.connect(process.env.MONGO_URL)
         .then(res => {
             console.log("connection to database made");
             app.listen(3000, () => {
