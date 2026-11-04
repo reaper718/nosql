@@ -7,7 +7,7 @@ const addProductToCart = (req, res) => {
     Product.findById(prodId)
         .then(product => {
             return req.user.addToCart(product);
-        })
+        })  
         .then(result => {
             if (res.headersSent) return;
 
@@ -18,33 +18,36 @@ const addProductToCart = (req, res) => {
         })
         .catch(err => {
             console.log(err);
-            res.status(500).json({ message: "Something went wrong" });
+            res.status(500).json({
+                success: false,
+                error: err
+            });
         });
 };
 
-const getCart = (req,res) => {
-    req.user
-        .populate('cart.items.productId')
-        .execPopulate()
-        .then(user => {
-            console.log(user.cart.items);
-            const products = user.cart.items;
-            res.status(200).json({
-                success: true,
-                products: products
-            })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                success: false,
-                message: err
-            })
-        })
-    })
-}
+const getCart = async (req, res) => {
+    try {
+        const user = await req.user.populate('cart.items.productId');
+
+        const products = user.cart.items;
+
+        return res.status(200).json({
+            success: true,
+            products: products
+        });
+
+    } catch (err) {
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
 
 const postDeleteCartProduct = (req,res) => {
-    const {prodId} = req.body;
+    const {prodId} = req.params;
 
     req.user
         .removeFromCart(prodId)
@@ -64,40 +67,55 @@ const postDeleteCartProduct = (req,res) => {
         })
 }
 
-const postOrder = (req,res) => {
-    req.user
-        .populate('cart.items.prodcuId')
-        .execPopulate()
-        .then(user => {
-            const products = user.cart.items.map(i => {
-                return {quantity: i.quantity, product: {...i.productId_doc}};
-            });
+const postOrder = async (req, res) => {
+    try {
+        const user = await req.user.populate('cart.items.productId');
 
-            const order = new Order({
-                user: {
-                    name: req.user.name,
-                    userId: req.user.id
-                },
-                products: products
+        if (user.cart.items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Your cart is empty"
             });
-            return order.save();
-        })
-        .then(result => {
-            console.log(result);
-            req.user.clearCart();
-        })
-        .then(() => {
-                res.status(200).json({
-                success: true,
-                message: "order placed successfully"
-            })
-        })
-        .catch(err => console.log(err));
-}
+        }
+
+        const products = user.cart.items.map(i => {
+            return {
+                quantity: i.quantity,
+                product: { ...i.productId.toObject() }
+            };
+        });
+
+        const order = new Order({
+            user: {
+                name: user.name,
+                userId: user._id
+            },
+            products: products
+        });
+
+        await order.save();
+
+        await user.clearCart();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order placed successfully",
+            order: order
+        });
+
+    } catch (err) {
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
 
 const getOrders = async (req,res) => {
     try {
-        const orders = Order.find({ 'user.userId': req.user.id });
+        const orders = await Order.find({ 'user.userId': req.user.id });
 
         res.status(200).json({
             success: true,
