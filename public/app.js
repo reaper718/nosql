@@ -57,13 +57,18 @@ function escapeHtml(value = "") {
 }
 
 function updateUserLabel() {
-    $("#activeUser").textContent = activeUserId ? `User: ${activeUserId.slice(0, 8)}…` : "No user selected";
+    // $("#activeUser").textContent = activeUserId ? `User: ${activeUserId.slice(0, 8)}…` : "No user selected";
 }
 
 async function loadProducts() {
-    try {
-        const data = await request(`${API.products}/getProduct`);
-        productsCache = data.products || [];
+    const token = sessionStorage.getItem('token');
+    axios.get(`${API.products}/getProduct`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+    .then(res => {
+        productsCache = res.data.products || [] ;
         $("#products").innerHTML = productsCache.length
             ? productsCache
                   .map(
@@ -72,28 +77,31 @@ async function loadProducts() {
                   )
                   .join("")
             : '<div class="col-12"><div class="alert alert-light">No products yet. Add your first product.</div></div>';
-    } catch (err) {
+    })
+    .catch(err => {
         $("#products").innerHTML =
             `<div class="col-12 text-danger">${escapeHtml(err.message)}. Check API URLs and server.</div>`;
-    }
+    })
 }
 
 $("#products").addEventListener("click", async (e) => {
     const add = e.target.closest(".add-cart");
     const edit = e.target.closest(".edit-product");
     const del = e.target.closest(".delete-product");
+    const token = sessionStorage.getItem('token');
     if (add) {
-        if (!requireUser()) return;
-        try {
-            await request(`${API.cart}/addToCart`, {
-                method: "POST",
-                body: JSON.stringify({ prodId: add.dataset.id, userId: activeUserId }),
-            });
-            notice("Product added to cart.");
-            await updateCartCount();
-        } catch (err) {
+        axios.post(`${API.cart}/addToCart/${add.dataset.id}`,{}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            notice("Product added to Cart");
+            updateCartCount();
+        })
+        .catch(err => {
             notice(err.message, "danger");
-        }
+        })
     }
     if (edit) {
         const p = productsCache.find((x) => x._id === edit.dataset.id);
@@ -108,15 +116,18 @@ $("#products").addEventListener("click", async (e) => {
         productModal.show();
     }
     if (del && confirm("Delete this product?")) {
-        try {
-            await request(`${API.products}/deleteProduct/${del.dataset.id}`, {
-                method: "DELETE",
-            });
-            notice("Product deleted.");
-            await loadProducts();
-        } catch (err) {
+        axios.delete(`${API.products}/deleteProduct/${del.dataset.id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            notice("Product Deleted");
+            loadProducts();
+        })
+        .catch(err => {
             notice(err.message, "danger");
-        }
+        })
     }
 });
 
@@ -127,32 +138,49 @@ $("#newProductBtn").addEventListener("click", () => {
     productModal.show();
 });
 
-$("#productForm").addEventListener("submit", async (e) => {
+const productForm = document.querySelector("#productForm");
+
+productForm.addEventListener("submit", (e) => {
+
     e.preventDefault();
-    const f = e.currentTarget;
-    const payload = Object.fromEntries(new FormData(f).entries());
-    const id = payload.prodId;
-    delete payload.prodId;
-    payload.price = Number(payload.price);
-    try {
-        if (id) {
-            payload.prodId = id;
-            await request(`${API.products}/editProduct`, {
-                method: "POST",
-                body: JSON.stringify(payload),
-            });
-            notice("Product updated.");
-        } else {
-            await request(`${API.products}/addProduct`, {
-                method: "POST",
-                body: JSON.stringify(payload),
-            });
-            notice("Product added.");
-        }
-        productModal.hide();
-        await loadProducts();
-    } catch (err) {
-        notice(err.message, "danger");
+
+    const productDetails = {
+        title: e.target.title.value,
+        price: e.target.price.value,
+        imageURL: e.target.imageURL.value,
+        description: e.target.description.value
+    };
+
+    const token = sessionStorage.getItem('token');
+
+    if(id) {
+        axios.post(`${API.products}/editProduct/:id`, productDetails, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            notice("Product added");
+            bootstrap.Modal.getOrCreateInstance(document.querySelector('#productModal')).hide();
+            loadProducts();
+        })
+        .catch(err => {
+            console.log(err);
+        })
+    } else {
+        axios.post(`${API.products}/addProduct`, productDetails, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            notice("Product added");
+            bootstrap.Modal.getOrCreateInstance(document.querySelector('#productModal')).hide();
+            loadProducts();
+        })
+        .catch(err => {
+            console.log(err);
+        });
     }
 });
 
@@ -198,32 +226,18 @@ loginForm.addEventListener("submit", (e) => {
           sessionStorage.setItem("token", res.data.token);
           
           alert("User logged in successfully!!!");
-          const loginModal = new bootstrap.Modal(document.querySelector("#loginModal"));
-          loginModal.hide();
+          bootstrap.Modal.getOrCreateInstance(
+                document.querySelector("#loginModal")
+            ).hide();
+
+          document.querySelector("#registerBtn").classList.add("d-none");
+          document.querySelector("#loginBtn").classList.add("d-none");
         })
         .catch(err => {
           e.target.reset();
           console.log(err);
         })
 })
-
-// $("#userForm").addEventListener("submit", async (e) => {
-//     e.preventDefault();
-//     const payload = Object.fromEntries(new FormData(e.currentTarget).entries());
-//     try {
-//         const data = await request(`${API.users}/addUser`, {
-//             method: "POST",
-//             body: JSON.stringify(payload),
-//         });
-//         setActiveUser(data.user._id);
-//         userModal.hide();
-//         e.currentTarget.reset();
-//         notice(`Welcome, ${data.user.name}! Your user ID is saved in this browser.`);
-//         await updateCartCount();
-//     } catch (err) {
-//         notice(err.message, "danger");
-//     }
-// });
 
 
 function setActiveUser(id) {
@@ -232,105 +246,215 @@ function setActiveUser(id) {
     updateUserLabel();
 }
 
-$("#selectUserBtn").addEventListener("click", async () => {
-    const id = $("#existingUserId").value.trim();
-    if (!id) return notice("Enter a user ID.", "warning");
-    try {
-        const data = await request(`${API.users}/getUser/${encodeURIComponent(id)}`);
-        setActiveUser(data.user._id);
-        userModal.hide();
-        notice(`Selected ${data.user.name}.`);
-        await updateCartCount();
-    } catch (err) {
-        notice(err.message, "danger");
-    }
-});
-
-async function updateCartCount() {
-    if (!activeUserId) {
+function updateCartCount() {
+    const token = sessionStorage.getItem('token');
+    axios.get(`${API.cart}/getCart`, {
+        headers: {
+                'Authorization': `Bearer ${token}`
+            }
+    })
+    .then(res => {
+        $("#cartCount").textContent = (res.data.products || []).reduce((n, p) => n + p.quantity, 0);
+    })
+    .catch(err => {
         $("#cartCount").textContent = "0";
-        return;
-    }
-    try {
-        const data = await request(`${API.cart}/getCart?userId=${encodeURIComponent(activeUserId)}`);
-        $("#cartCount").textContent = (data.products || []).reduce((n, p) => n + p.quantity, 0);
-    } catch {
-        $("#cartCount").textContent = "0";
-    }
+    })
 }
 
-async function showCart() {
-    if (!requireUser()) return;
-    $("#ordersSection").classList.add("d-none");
-    $("#cartSection").classList.remove("d-none");
-    try {
-        const data = await request(`${API.cart}/getCart?userId=${encodeURIComponent(activeUserId)}`);
-        const items = data.products || [];
+function showCart() {
+    const cartModal = bootstrap.Modal.getOrCreateInstance(
+        document.querySelector("#cartModal")
+    );
+
+    cartModal.show();
+    
+    const token = sessionStorage.getItem("token");
+
+    axios.get(`${API.cart}/getCart`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+    .then(res => {
+
+        const items = res.data.products || [];
+
+        let total = 0;
+
         $("#cartItems").innerHTML = items.length
-            ? items
-                  .map(
-                      (p) =>
-                          `<div class="card mb-2"><div class="card-body d-flex align-items-center gap-3"><img class="cart-thumb" src="${escapeHtml(p.imageURL || "")}" onerror="this.style.visibility='hidden'" alt=""><div class="flex-grow-1"><strong>${escapeHtml(p.title)}</strong><div class="text-secondary small">${money(p.price)} × ${p.quantity}</div></div><strong>${money(Number(p.price) * p.quantity)}</strong><button class="btn btn-outline-danger btn-sm remove-cart" data-id="${p._id}">Remove</button></div></div>`
-                  )
-                  .join("")
+            ? items.map(item => {
+
+                const product = item.productId;
+                const quantity = item.quantity;
+
+                const subtotal = Number(product.price) * quantity;
+
+                total += subtotal;
+
+                return `
+                    <div class="card mb-2">
+                        <div class="card-body d-flex align-items-center gap-3">
+
+                            <img
+                                class="cart-thumb"
+                                src="${escapeHtml(product.imageURL || "")}"
+                                onerror="this.style.visibility='hidden'"
+                                alt=""
+                            >
+
+                            <div class="flex-grow-1">
+                                <strong>${escapeHtml(product.title)}</strong>
+
+                                <div class="text-secondary small">
+                                    ${money(product.price)} × ${quantity}
+                                </div>
+                            </div>
+
+                            <strong>${money(subtotal)}</strong>
+
+                            <button
+                                class="btn btn-outline-danger btn-sm remove-cart"
+                                data-id="${product._id}">
+                                Remove
+                            </button>
+
+                        </div>
+                    </div>
+                `;
+            }).join("")
             : '<p class="text-secondary">Your cart is empty.</p>';
-        $("#cartTotal").textContent = `Total: ${money(data.total)}`;
+
+        $("#cartTotal").textContent = `Total: ${money(total)}`;
+
         $("#checkoutBtn").disabled = !items.length;
-        await updateCartCount();
-    } catch (err) {
+
+        updateCartCount();
+    })
+    .catch(err => {
+        console.log(err);
         notice(err.message, "danger");
-    }
+    });
 }
 
 $("#showCartBtn").addEventListener("click", showCart);
-$("#continueShopping").addEventListener("click", () => $("#cartSection").classList.add("d-none"));
+// $("#continueShopping").addEventListener("click", () => $("#cartSection").classList.add("d-none"));
 $("#cartItems").addEventListener("click", async (e) => {
     const btn = e.target.closest(".remove-cart");
+    const token = sessionStorage.getItem('token');
     if (!btn) return;
-    try {
-        await request(`${API.cart}/deleteItem`, {
-            method: "DELETE",
-            body: JSON.stringify({ prodId: btn.dataset.id, userId: activeUserId }),
-        });
-        await showCart();
-        notice("Item removed.");
-    } catch (err) {
+
+    axios.delete(`${API.cart}/deleteItem/${btn.dataset.id}`, {
+        headers: {
+                'Authorization': `Bearer ${token}`
+            }
+    })
+    .then(res => {
+        showCart();
+        notice("Item removed");
+    })
+    .catch(err => {
         notice(err.message, "danger");
-    }
+    })
 });
 
 $("#checkoutBtn").addEventListener("click", async () => {
-    if (!requireUser()) return;
-    try {
-        await request(`${API.cart}/create-order`, {
-            method: "POST",
-            body: JSON.stringify({ userId: activeUserId }),
-        });
+    const token = sessionStorage.getItem('token')
+    axios.post(`${API.cart}/create-order`, {}, {
+        headers: {
+                'Authorization': `Bearer ${token}`
+            }
+    })
+    .then(res => {
         notice("Order placed successfully!");
-        await showCart();
-        await updateCartCount();
-    } catch (err) {
+        showCart();
+        updateCartCount();
+    })
+    .catch(err => {
         notice(err.message, "danger");
-    }
+    })
 });
 
 async function showOrders() {
-    if (!requireUser()) return;
-    $("#cartSection").classList.add("d-none");
-    $("#ordersSection").classList.remove("d-none");
+
+    const ordersModal = bootstrap.Modal.getOrCreateInstance(
+        document.querySelector("#ordersModal")
+    );
+
+    ordersModal.show();
+
+    const token = sessionStorage.getItem("token");
+
     try {
-        const data = await request(`${API.cart}/orders?userId=${encodeURIComponent(activeUserId)}`);
-        const orders = data.orders || [];
+        const res = await axios.get(`${API.cart}/orders`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const orders = res.data.orders || [];
+
         $("#ordersList").innerHTML = orders.length
-            ? orders
-                  .map(
-                      (o) =>
-                          `<div class="card mb-3"><div class="card-body"><div class="d-flex justify-content-between"><strong>Order #${String(o._id).slice(-6)}</strong><span>${new Date(o.createdAt).toLocaleString()}</span></div><ul class="mb-2 mt-2">${o.items.map((i) => `<li>${escapeHtml(i.title)} × ${i.quantity} — ${money(i.price * i.quantity)}</li>`).join("")}</ul><strong>Total: ${money(o.total)}</strong></div></div>`
-                  )
-                  .join("")
-            : '<p class="text-secondary">No orders yet.</p>';
+            ? orders.map(o => {
+
+                let total = 0;
+
+                const productsHTML = o.products.map(item => {
+
+                    const product = item.product;
+                    const quantity = item.quantity;
+
+                    const subtotal = Number(product.price) * quantity;
+
+                    total += subtotal;
+
+                    return `
+                        <li class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    ${escapeHtml(product.title)} × ${quantity}
+                                </span>
+
+                                <strong>${money(subtotal)}</strong>
+                            </div>
+                        </li>
+                    `;
+                }).join("");
+
+                return `
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <strong>
+                                    Order #${String(o._id).slice(-6)}
+                                </strong>
+
+                                <span class="text-secondary small">
+                                    ${o.createdAt
+                                        ? new Date(o.createdAt).toLocaleString()
+                                        : ""}
+                                </span>
+                            </div>
+
+                            <ul class="list-unstyled">
+                                ${productsHTML}
+                            </ul>
+
+                            <hr>
+
+                            <div class="text-end">
+                                <strong>Total: ${money(total)}</strong>
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+            }).join("")
+            : '<p class="text-secondary text-center py-4">No orders yet.</p>';
+
     } catch (err) {
-        notice(err.message, "danger");
+        console.log(err);
+        notice(err.response?.data?.message || err.message, "danger");
     }
 }
 
@@ -338,3 +462,8 @@ $("#showOrdersBtn").addEventListener("click", showOrders);
 updateUserLabel();
 loadProducts();
 updateCartCount();
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadProducts();
+});

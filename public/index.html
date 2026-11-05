@@ -13,12 +13,14 @@
                 <a class="navbar-brand fw-bold" href="#">MiniShop</a>
                 <div class="d-flex align-items-center gap-2 ms-auto">
                     <!-- <span id="activeUser" class="text-light small">No user selected</span> -->
-                    <button class="btn btn-outline-light btn-sm" 
+                    <button class="btn btn-outline-light btn-sm"
+                          id="registerBtn" 
                           data-bs-toggle="modal" 
                           data-bs-target="#userModal">
                         Register
                     </button>
                       <button class="btn btn-outline-info btn-sm"
+                          id="loginBtn"
                           data-bs-toggle="modal"
                           data-bs-target="#loginModal">
                           Login
@@ -41,21 +43,62 @@
             <div id="products" class="row g-3">
                 <div class="col-12 text-secondary">Loading products…</div>
             </div>
-            <section id="cartSection" class="mt-5 d-none">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h2 class="h4">Your cart</h2>
-                    <button class="btn btn-sm btn-outline-secondary" id="continueShopping">Continue shopping</button>
+            <!-- Cart Modal -->
+            <div class="modal fade" id="cartModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Your Shopping Cart</h5>
+                            <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div id="cartItems">
+                                <p class="text-secondary">Loading cart...</p>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer d-flex justify-content-between">
+                            <strong id="cartTotal">Total: ₹0.00</strong>
+
+                            <button class="btn btn-success" id="checkoutBtn" disabled>
+                                Place order
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-                <div id="cartItems" class="mt-3"></div>
-                <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
-                    <strong id="cartTotal">Total: ₹0.00</strong
-                    ><button class="btn btn-success" id="checkoutBtn">Place order</button>
+            </div>
+            <!-- Orders Modal -->
+            <div class="modal fade" id="ordersModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Your Orders</h5>
+
+                            <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div id="ordersList">
+                                <p class="text-secondary">Loading orders...</p>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary"
+                                data-bs-dismiss="modal">
+                                Close
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-            </section>
-            <section id="ordersSection" class="mt-5 d-none">
-                <h2 class="h4">Your orders</h2>
-                <div id="ordersList" class="mt-3"></div>
-            </section>
+            </div>
         </main>
 
         <div class="modal fade" id="userModal" tabindex="-1">

@@ -29,3 +29,27 @@ body {
     border: 1px solid #eee;
     border-radius: 8px;
 }
+
+.cart-thumb {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+#cartItems .card {
+    border-radius: 12px;
+}
+
+#cartModal .modal-content {
+    border-radius: 15px;
+}
+
+#ordersModal .modal-content {
+    border-radius: 15px;
+}
+
+#ordersModal .card {
+    border-radius: 12px;
+    border: 1px solid #eee;
+}
